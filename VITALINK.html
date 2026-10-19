@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VITALINK</title>
+<style>
+:root{--bg:#f4f8f7;--card:#fff;--ink:#12292b;--mut:#51676a;--line:#cddddb;--brand:#0b6e69;--brand-ink:#fff;--soft:#e2f1ef;--warn:#fff1d6;--bad:#fde4e1;--ok:#e1f4e6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1819;--card:#16262a;--ink:#e6f1f0;--mut:#9db5b7;--line:#2c4549;--brand:#4cc2ba;--brand-ink:#06201f;--soft:#1b3a3c;--warn:#3a3016;--bad:#40201e;--ok:#18361f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1819;--card:#16262a;--ink:#e6f1f0;--mut:#9db5b7;--line:#2c4549;--brand:#4cc2ba;--brand-ink:#06201f;--soft:#1b3a3c;--warn:#3a3016;--bad:#40201e;--ok:#18361f;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Noto Sans","Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.logo{font-weight:800;font-size:1.25rem;letter-spacing:.02em;color:var(--brand)}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button,.btn{font:inherit;border:1px solid var(--brand);background:transparent;color:var(--brand);padding:8px 13px;border-radius:8px;cursor:pointer}
+nav button[aria-current=page],.btn.p{background:var(--brand);color:var(--brand-ink)}
+:focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h2{margin:4px 0 12px;font-size:1.4rem}h3{margin:0 0 8px;font-size:1.05rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+label{display:block;font-weight:600;font-size:.88rem;margin:8px 0 3px}
+input,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1 1 110px}
+.note{background:var(--soft);padding:9px 12px;border-radius:8px;font-size:.9rem;margin:10px 0}
+.alert{padding:9px 12px;border-radius:8px;margin:6px 0;background:var(--warn)}.alert.bad{background:var(--bad)}.alert.ok{background:var(--ok)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-weight:400}.chk input{width:auto;margin-top:5px}
+.tbl{width:100%;border-collapse:collapse;font-size:.92rem}.tbl td,.tbl th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.mut{color:var(--mut);font-size:.88rem}ul{padding-left:18px;margin:6px 0}
+svg.spark{width:100%;height:70px}.hide{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">VITALINK</span>
+  <nav id="nav" aria-label="Main"></nav>
+  <div class="row" style="flex:0 0 auto">
+    <select id="lang" aria-label="Language" style="width:auto"><option value="en">English</option><option value="hi">हिन्दी</option></select>
+  </div>
+</header>
+<main id="app"></main>
+
+<script>
+(function(){
+"use strict";
+var T={en:{home:"Home",vitals:"Vitals",care:"Find care",sym:"Symptoms",meds:"Medicines",priv:"Privacy",
+ hi:"Welcome to VITALINK",sub:"Your health records, care discovery and reminders in one place. Everything on this page stays on your device.",
+ emergency:"In an emergency, dial 112 or go to the nearest hospital."},
+hi:{home:"होम",vitals:"वाइटल्स",care:"देखभाल खोजें",sym:"लक्षण",meds:"दवाइयाँ",priv:"गोपनीयता",
+ hi:"VITALINK में आपका स्वागत है",sub:"आपके स्वास्थ्य रिकॉर्ड, देखभाल की खोज और रिमाइंडर एक जगह। इस पेज का सारा डेटा आपके डिवाइस पर ही रहता है।",
+ emergency:"आपात स्थिति में 112 डायल करें या नज़दीकी अस्पताल जाएँ।"}};
+var tabs=["home","vitals","care","sym","meds","priv"];
+var S={tab:"home",lang:"en",vitals:[],meds:[],appts:[],vax:{},consent:{analytics:false,share:false,location:false},profile:{name:"",age:""}};
+var KEY="vitalink_demo_v1";
+try{var raw=localStorage.getItem(KEY);if(raw){var d=JSON.parse(raw);for(var k in d)S[k]=d[k];}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function t(k){return (T[S.lang]&&T[S.lang][k])||T.en[k]||k;}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function $(id){return document.getElementById(id);}
+
+function render(){
+  document.documentElement.lang=S.lang;
+  $("lang").value=S.lang;
+  $("nav").innerHTML=tabs.map(function(x){return '<button data-t="'+x+'"'+(S.tab===x?' aria-current="page"':'')+'>'+t(x)+'</button>';}).join("");
+  var v=({home:home,vitals:vitals,care:care,sym:sym,meds:meds,priv:priv})[S.tab]();
+  $("app").innerHTML=v;
+  bind();
+}
+function bind(){
+  var a=$("app");
+  var f;
+  if(S.tab==="vitals"){f=$("vf");f.onsubmit=function(e){e.preventDefault();var g=function(n){var x=parseFloat(f[n].value);return isNaN(x)?null:x;};
+    var r={d:new Date().toISOString().slice(0,10),sys:g("sys"),dia:g("dia"),glu:g("glu"),hr:g("hr"),sleep:g("sleep"),steps:g("steps")};
+    if(r.sys===null&&r.glu===null&&r.hr===null&&r.sleep===null&&r.steps===null)return;S.vitals.push(r);save();render();};}
+  if(S.tab==="care"){
+    $("cf").onsubmit=function(e){e.preventDefault();var q=$("concern").value,p=$("place").value.trim();if(!p)return;
+      window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q+" near "+p),"_blank","noopener");};
+    $("geo").onclick=function(){if(!$("gc").checked)return;var m=$("gmsg");
+      if(!navigator.geolocation){m.textContent="Location is not supported here. Use city or PIN code.";return;}
+      navigator.geolocation.getCurrentPosition(function(p){window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent($("concern").value)+"&center="+p.coords.latitude.toFixed(3)+","+p.coords.longitude.toFixed(3),"_blank","noopener");m.textContent="Opened in Google Maps. Your location was not saved.";},
+        function(){m.textContent="Location was not shared. You can still search by city or PIN code.";},{timeout:10000});};
+    $("bf").onsubmit=function(e){e.preventDefault();var b=e.target;S.appts.push({who:b.who.value,mode:b.mode.value,when:b.when.value,note:b.note.value});save();render();};
+  }
+  if(S.tab==="sym")$("sf").onsubmit=function(e){e.preventDefault();$("sres").innerHTML=analyse(e.target);};
+  if(S.tab==="meds"){
+    $("mf").onsubmit=function(e){e.preventDefault();var m=e.target;S.meds.push({n:m.n.value,dose:m.dose.value,time:m.time.value,done:""});save();render();};
+    if($("notif"))$("notif").onclick=function(){if("Notification"in window)Notification.requestPermission().then(function(r){$("nmsg").textContent=r==="granted"?"Browser reminders on while this tab is open.":"Notifications not allowed.";});};
+  }
+  if(S.tab==="priv"){
+    ["analytics","share","location"].forEach(function(k){$("c_"+k).onchange=function(e){S.consent[k]=e.target.checked;save();};});
+    $("exp").onclick=function(){var b=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});var l=document.createElement("a");l.href=URL.createObjectURL(b);l.download="vitalink-my-data.json";l.click();};
+    $("del").onclick=function(){if(confirm("Delete all VITALINK data from this device?")){try{localStorage.removeItem(KEY);}catch(e){}location.reload();}};
+  }
+  if(S.tab==="home"){$("pf").onsubmit=function(e){e.preventDefault();S.profile={name:e.target.name.value,age:e.target.age.value};save();render();};
+    a.querySelectorAll("[data-v]").forEach(function(c){c.onchange=function(){S.vax[c.dataset.v]=c.checked;save();};});}
+  a.querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(){var p=b.dataset.del.split(":");S[p[0]].splice(+p[1],1);save();render();};});
+  a.querySelectorAll("[data-take]").forEach(function(b){b.onclick=function(){var m=S.meds[+b.dataset.take];m.done=m.done===today()?"":today();save();render();};});
+}
+function today(){return new Date().toISOString().slice(0,10);}
+
+function home(){
+  var age=parseInt(S.profile.age,10),prev=[];
+  if(!isNaN(age)){
+    prev.push("Yearly check-up with blood pressure and weight review");
+    if(age>=30)prev.push("Blood sugar and cholesterol screening, as advised by your doctor");
+    if(age>=40)prev.push("Discuss heart-risk screening with your doctor");
+    if(age>=50)prev.push("Ask about cancer screening schedules suited to you");
+    prev.push("Eye and dental check-ups once a year");
+  }
+  var V=["Influenza (yearly)","Tetanus/Td booster (every 10 years)","Hepatitis B","COVID-19 (as per current guidance)","HPV (if eligible)","Pneumococcal (if advised)"];
+  return '<h2>'+t("hi")+(S.profile.name?', '+esc(S.profile.name):'')+'</h2><p class="mut">'+t("sub")+'</p><div class="alert bad">'+t("emergency")+'</div>'+
+  '<div class="grid"><div class="card"><h3>My profile</h3><form id="pf"><label for="name">Name</label><input id="name" name="name" value="'+esc(S.profile.name)+'"><label for="age">Age</label><input id="age" name="age" type="number" min="0" max="120" value="'+esc(S.profile.age)+'"><p><button class="btn p">Save profile</button></p></form></div>'+
+  '<div class="card"><h3>Preventive care suggestions</h3>'+(prev.length?'<ul>'+prev.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ul>':'<p class="mut">Add your age to see suggestions.</p>')+'<p class="mut">General guidance only. Your doctor decides what is right for you.</p></div>'+
+  '<div class="card"><h3>Vaccination tracker</h3>'+V.map(function(x){return '<label class="chk"><input type="checkbox" data-v="'+esc(x)+'"'+(S.vax[x]?' checked':'')+'>'+x+'</label>';}).join("")+'</div>'+
+  '<div class="card"><h3>Upcoming appointments</h3>'+apptList()+'</div></div>';
+}
+function apptList(){return S.appts.length?'<table class="tbl">'+S.appts.map(function(a,i){return '<tr><td>'+esc(a.when.replace("T"," "))+'</td><td>'+esc(a.who)+' ('+esc(a.mode)+')</td><td><button class="btn" data-del="appts:'+i+'" aria-label="Cancel appointment">Cancel</button></td></tr>';}).join("")+'</table>':'<p class="mut">No appointments yet. Book one under Find care.</p>';}
+
+function spark(arr){
+  if(arr.length<2)return '<p class="mut">Add two or more readings to see a trend.</p>';
+  var mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr),rg=(mx-mn)||1;
+  var pts=arr.map(function(v,i){return (i/(arr.length-1)*300).toFixed(1)+','+(60-((v-mn)/rg)*50).toFixed(1);}).join(" ");
+  return '<svg class="spark" viewBox="0 0 300 66" role="img" aria-label="Trend, low '+mn+', high '+mx+'"><polyline fill="none" stroke="var(--brand)" stroke-width="2.5" points="'+pts+'"/></svg>';
+}
+function vitals(){
+  var L=S.vitals,al=[],last=L[L.length-1];
+  if(last){
+    if(last.sys!==null&&last.dia!==null){if(last.sys>=180||last.dia>=120)al.push(["bad","Blood pressure is very high. Seek medical care urgently."]);else if(last.sys>=140||last.dia>=90)al.push(["","Blood pressure is above the usual range. Consider speaking to a doctor."]);else if(last.sys<90)al.push(["","Blood pressure is on the low side. Mention it to a doctor if you feel unwell."]);}
+    if(last.glu!==null){if(last.glu>=300||last.glu<54)al.push(["bad","Glucose is at a level that may need urgent attention. Contact a doctor now."]);else if(last.glu>=180||last.glu<70)al.push(["","Glucose is outside the usual range. Review with your doctor."]);}
+    if(last.hr!==null&&(last.hr>110||last.hr<45))al.push(["","Resting heart rate is outside the usual range. Consider checking with a doctor."]);
+    if(last.sleep!==null&&last.sleep<6)al.push(["","Sleep is under 6 hours. Regular, longer sleep supports health."]);
+    if(last.steps!==null&&last.steps>=7000)al.push(["ok","Great activity level today."]);
+  }
+  var col=function(k,lab,u){var a=L.filter(function(r){return r[k]!==null;}).map(function(r){return r[k];});return '<div class="card"><h3>'+lab+'</h3><p class="mut">'+(a.length?'Latest: '+a[a.length-1]+' '+u:'No data yet')+'</p>'+spark(a)+'</div>';};
+  return '<h2>Track vitals</h2><div class="card"><form id="vf"><div class="row"><div><label for="sys">BP systolic</label><input id="sys" name="sys" type="number" min="40" max="260"></div><div><label for="dia">BP diastolic</label><input id="dia" name="dia" type="number" min="20" max="160"></div><div><label for="glu">Glucose (mg/dL)</label><input id="glu" name="glu" type="number" min="20" max="700"></div><div><label for="hr">Heart rate (bpm)</label><input id="hr" name="hr" type="number" min="20" max="250"></div><div><label for="sleep">Sleep (hours)</label><input id="sleep" name="sleep" type="number" step="0.5" min="0" max="24"></div><div><label for="steps">Steps</label><input id="steps" name="steps" type="number" min="0"></div></div><p><button class="btn p">Save reading</button></p></form></div>'+
+  al.map(function(a){return '<div class="alert '+a[0]+'" role="status">'+a[1]+'</div>';}).join("")+
+  '<p class="mut">Alerts use general ranges and are not a diagnosis.</p><div class="grid">'+col("sys","Blood pressure (systolic)","mmHg")+col("glu","Glucose","mg/dL")+col("hr","Heart rate","bpm")+col("sleep","Sleep","h")+col("steps","Activity","steps")+'</div>';
+}
+
+function care(){
+  var opts=[["hospital","Any hospital"],["endocrinologist","Diabetes: endocrinologist"],["cardiologist","Heart: cardiologist"],["dermatologist","Skin: dermatologist"],["ophthalmologist","Eyes: ophthalmologist"],["pediatrician","Children: pediatrician"],["gynecologist","Women’s health"],["orthopedic doctor","Bones and joints"],["psychiatrist","Mental health"],["dentist","Dental"]];
+  return '<h2>Find healthcare near me</h2><div class="grid"><div class="card"><h3>Search hospitals and doctors</h3><form id="cf"><label for="concern">Health concern or specialty</label><select id="concern">'+opts.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join("")+'</select><label for="place">City or PIN code</label><input id="place" placeholder="e.g. Jaipur or 302001" required minlength="3"><p><button class="btn p">Open results in Google Maps</button></p></form>'+
+  '<label class="chk"><input type="checkbox" id="gc"> I allow VITALINK to read my location once. It is not saved.</label><p><button class="btn" id="geo" type="button">Use my location</button></p><p class="mut" id="gmsg" role="status"></p>'+
+  '<div class="note">These are directory searches, not diagnoses or endorsements. The full VITALINK project (Module 8) shows live Google Places results on an embedded map through its backend. A hosted page like this cannot load Google Maps, so results open in Google Maps itself.</div></div>'+
+  '<div class="card"><h3>Book an appointment</h3><form id="bf"><label for="who">Doctor or clinic</label><input id="who" name="who" placeholder="Name from your search" required><label for="mode">Visit type</label><select id="mode" name="mode"><option>Video consultation</option><option>Chat consultation</option><option>In-person visit</option></select><label for="when">Date and time</label><input id="when" name="when" type="datetime-local" required><label for="note">Reason (optional)</label><input id="note" name="note"><p><button class="btn p">Save booking request</button></p></form><p class="mut">Demo: bookings are saved on this device only. In production they go to the provider after your consent.</p>'+apptList()+'</div></div>';
+}
+
+function analyse(f){
+  var c=[].slice.call(f.querySelectorAll("input[type=checkbox]:checked")).map(function(x){return x.value;});
+  var txt=(f.free.value||"").toLowerCase(),days=parseInt(f.days.value,10)||0;
+  var red=["chest pain","trouble breathing","fainting","one-sided weakness","severe bleeding","confusion"];
+  var hit=c.filter(function(x){return red.indexOf(x)>-1;});
+  ["chest pain","can't breathe","unconscious","suicid","stroke"].forEach(function(w){if(txt.indexOf(w)>-1)hit.push(w);});
+  if(hit.length)return '<div class="alert bad"><strong>Get urgent help now.</strong> Your symptoms include a warning sign ('+esc(hit.join(", "))+'). Dial 112 or go to the nearest emergency department.</div>';
+  if(!c.length&&!txt)return '<div class="alert">Select at least one symptom or describe how you feel.</div>';
+  var out=[],tips=[];
+  var has=function(x){return c.indexOf(x)>-1;};
+  if(has("fever")&&has("cough")){out.push("Fever with cough can go with common viral infections.");tips.push("Rest, drink fluids, monitor temperature.");}
+  if(has("headache")&&has("blurred vision"))out.push("Headache with vision changes should be checked by a doctor soon.");
+  if(has("increased thirst")&&has("frequent urination")){out.push("Thirst with frequent urination is a reason to check blood sugar.");tips.push("Consider a glucose test and see a doctor.");}
+  if(has("fatigue")&&has("poor sleep")){out.push("Tiredness with poor sleep often relates to sleep habits, stress or other causes.");tips.push("Keep a fixed sleep schedule; limit screens and caffeine at night.");}
+  if(has("palpitations"))out.push("Palpitations deserve a check-up, especially if repeated.");
+  if(!out.length)out.push("Your symptoms alone do not point to a clear pattern.");
+  var risk=days>7||c.length>=4?"Moderate: arrange a doctor visit":"Lower: self-care and watchful waiting";
+  return '<div class="card"><h3>Preliminary insight (not a diagnosis)</h3><ul>'+out.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ul><p><strong>Risk indicator:</strong> '+risk+'</p>'+(tips.length?'<h3>Lifestyle suggestions</h3><ul>'+tips.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ul>':'')+'<p class="mut">This simple rule-based demo cannot diagnose. Please consult a licensed doctor, especially if symptoms last or worsen.</p></div>';
+}
+function sym(){
+  var L=["fever","cough","headache","blurred vision","fatigue","poor sleep","increased thirst","frequent urination","palpitations","chest pain","trouble breathing","fainting","one-sided weakness","severe bleeding","confusion"];
+  return '<h2>Symptom insights</h2><div class="card"><form id="sf"><fieldset style="border:0;padding:0;margin:0"><legend class="mut">Select what applies</legend><div class="grid" style="gap:0 14px">'+L.map(function(x){return '<label class="chk"><input type="checkbox" value="'+x+'">'+x+'</label>';}).join("")+'</div></fieldset><label for="free">Anything else? (optional)</label><input id="free" name="free"><label for="days">Days since it started</label><input id="days" name="days" type="number" min="0"><p><button class="btn p">Get insights</button></p></form></div><div id="sres" aria-live="polite"></div><div class="note">Non-diagnostic. In production, an AI model reviews your input on the server with your consent, and warning signs always trigger emergency guidance first.</div>';
+}
+
+function meds(){
+  var td=today();
+  return '<h2>Medication reminders</h2><div class="grid"><div class="card"><h3>Add a medicine</h3><form id="mf"><label for="n">Medicine</label><input id="n" name="n" required><label for="dose">Dose</label><input id="dose" name="dose" placeholder="e.g. 1 tablet"><label for="time">Daily time</label><input id="time" name="time" type="time" required><p><button class="btn p">Add reminder</button></p></form>'+
+  ('Notification'in window?'<p><button class="btn" id="notif" type="button">Allow browser reminders</button></p><p class="mut" id="nmsg"></p>':'')+'</div><div class="card"><h3>Today</h3>'+(S.meds.length?'<table class="tbl">'+S.meds.map(function(m,i){return '<tr><td>'+esc(m.time)+'</td><td>'+esc(m.n)+' <span class="mut">'+esc(m.dose)+'</span></td><td><button class="btn'+(m.done===td?' p':'')+'" data-take="'+i+'">'+(m.done===td?'Taken':'Mark taken')+'</button> <button class="btn" data-del="meds:'+i+'" aria-label="Remove">Remove</button></td></tr>';}).join("")+'</table>':'<p class="mut">No medicines yet. Add one to get a daily reminder.</p>')+'</div></div>';
+}
+
+function priv(){
+  var c=S.consent;
+  var row=function(k,l,d){return '<label class="chk"><input type="checkbox" id="c_'+k+'"'+(c[k]?' checked':'')+'><span><strong>'+l+'</strong><br><span class="mut">'+d+'</span></span></label>';};
+  return '<h2>Privacy and consent</h2><div class="grid"><div class="card"><h3>Your choices</h3>'+row("share","Share records with my doctor","Only doctors you pick, only for the time you set.")+row("location","Remember my city","Never precise coordinates.")+row("analytics","Anonymous usage statistics","Off by default.")+'</div>'+
+  '<div class="card"><h3>Your data</h3><p>All data in this demo stays in your browser. Nothing is sent to a server.</p><p><button class="btn" id="exp">Download my data</button> <button class="btn" id="del">Delete my data</button></p></div>'+
+  '<div class="card"><h3>How the full platform protects you</h3><ul><li>Encryption in transit (TLS 1.3) and at rest (AES-256)</li><li>Role-based access for patients, doctors and hospital staff</li><li>Consent records and audit logs for every access</li><li>Built to be compliance-ready for DPDP Act and HIPAA-style rules</li></ul></div></div>';
+}
+
+document.addEventListener("click",function(e){var b=e.target.closest("[data-t]");if(b){S.tab=b.dataset.t;render();window.scrollTo(0,0);}});
+$("lang").onchange=function(e){S.lang=e.target.value;save();render();};
+render();
+})();
+</script>
+</body>
+</html>
